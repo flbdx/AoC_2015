@@ -22,41 +22,39 @@ class Container(object):
         return repr(self.c)
 
 def work(inputs, target, part2 = False):
-    containers = []
+    containers = set()
     uniq = 0
     for line in inputs:
         line = line.strip()
         if len(line) == 0:
             continue
-        containers.append(Container(int(line), uniq))
+        containers.add(Container(int(line), uniq))
         uniq += 1
         
     cache = set()
-    def gen(used_containers, total, available_containers, rem):
+    def gen(used_containers, available_containers, rem):
         if rem == 0:
             yield used_containers
-        elif rem > 0:
+        else:
             for c in available_containers:
                 if c.c <= rem:
                     nxt = used_containers | {c}
                     cache_entry = tuple(sorted([e.uniq for e in nxt]))  # something hashable
-                    if cache_entry in cache:
-                        continue
-                    cache.add(cache_entry)
-                    for seq in gen(used_containers | {c}, total + c.c, available_containers - {c}, rem - c.c):
-                        yield seq
+                    if not cache_entry in cache:
+                        cache.add(cache_entry)
+                        for seq in gen(nxt, available_containers - {c}, rem - c.c):
+                            yield seq
 
     if not part2:
         ret = 0
-        for p in gen(set(), 0, set(containers), target):
+        for p in gen(set(), containers, target):
             ret += 1
         return ret
     else:
         counts = {}
         min_len = len(containers)
-        for p in gen(set(), 0, set(containers), target):
-            p = list(p)
-            l = len(p)
+        for p in gen(set(), containers, target):
+            l = len(list(p))
             counts[l] = counts.setdefault(l, 0) + 1
             if l < min_len:
                 min_len = l
